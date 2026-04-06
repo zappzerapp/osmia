@@ -1,6 +1,8 @@
 export { run } from "./cli.js";
 export {
   loadConfig,
+  serializeConfig,
+  supportedExtractionFieldTypes,
   validateConfig,
   configSchema,
   extractionConfigSchema,
@@ -12,6 +14,13 @@ export {
   type ResearchConfig,
 } from "./config.js";
 export { LLMClient, LLMError, type LLMConfig as RuntimeLLMConfig } from "./llm.js";
+export {
+  createDefaultConfig,
+  defaultExtractionPrompt,
+  runConfigWizard,
+  type ConfigWizardOptions,
+  type ConfigWizardResult,
+} from "./wizard.js";
 export {
   detectJsonlFormat,
   loadInputData,

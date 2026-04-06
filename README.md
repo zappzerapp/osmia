@@ -30,7 +30,11 @@ npx osmia-ai --config config.yaml --input data.json --output enriched.json
 
 ## Quick Start
 
-1. **Create config.yaml** (see [examples/catalog-config.yaml](examples/catalog-config.yaml))
+1. **Create `config.yaml`**
+   ```bash
+   osmia-ai init
+   ```
+   The new wizard asks for your LLM settings, search template, extraction prompt, and schema fields, then writes a valid YAML config for you.
 
 2. **Set API key**:
    ```bash
@@ -48,13 +52,22 @@ npx osmia-ai --config config.yaml --input data.json --output enriched.json
 Usage: osmia-ai [options]
 
 Options:
-  -c, --config <path>            YAML configuration file (required)
+  -c, --config <path>            YAML configuration file
   -i, --input <path>             Input JSON/JSONL file (reads stdin if not provided)
   -o, --output <path>           Output file (writes stdout if not provided)
   -s, --skip-if-exists <fields>  Comma-separated fields to skip if non-empty
   -w, --workers <n>             Concurrent workers (default: 1)
   --dry-run                     Simulate without LLM calls
+  --wizard [path]               Launch an interactive wizard and create a YAML config file
   -v, --verbose                 Verbosity (use -v or -vv)
+```
+
+Create a config interactively:
+
+```bash
+osmia-ai init
+# or
+osmia-ai --wizard config.yaml
 ```
 
 ## Examples
@@ -63,6 +76,12 @@ Options:
 
 ```bash
 osmia-ai --config config.yaml --input data.json --output enriched.json
+```
+
+### Generate Config Interactively
+
+```bash
+osmia-ai init config.yaml
 ```
 
 ### Unix Pipe
@@ -119,6 +138,8 @@ extraction:
 ```
 
 **Templating**: Use `{fieldName}` placeholders in `searchQuery`—they're replaced from input records.
+
+The repository also includes a current template at [config.yaml.template](config.yaml.template), but `osmia-ai init` is the fastest way to generate a valid config for a new project.
 
 ## Use Cases
 

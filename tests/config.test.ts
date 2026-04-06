@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { loadConfig, validateConfig } from "../src/config.js";
+import { loadConfig, serializeConfig, validateConfig } from "../src/config.js";
 
 const tempDirs: string[] = [];
 
@@ -137,5 +137,31 @@ extraction:
         },
       })
     ).toThrow(/Schema field type must be one of|extraction\.schema\.alter\.type/);
+  });
+
+  it("serializes valid config data back to YAML", () => {
+    const originalConfig = validateConfig({
+      llm: {
+        model: "kimi-k2.5",
+        apiUrl: "https://ollama.com/api/chat",
+      },
+      research: {
+        searchQuery: "{titel} info",
+      },
+      extraction: {
+        prompt: "Extract fields",
+        schema: {
+          alter: "string",
+        },
+      },
+    });
+
+    const yaml = serializeConfig(originalConfig);
+    const tempDir = mkdtempSync(join(tmpdir(), "osmia-config-serialize-"));
+    tempDirs.push(tempDir);
+    const configPath = join(tempDir, "config.yaml");
+    writeFileSync(configPath, yaml, "utf-8");
+
+    expect(loadConfig(configPath)).toEqual(originalConfig);
   });
 });

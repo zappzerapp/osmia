@@ -3,12 +3,14 @@
 import { Command } from "commander";
 import { stderr } from "node:process";
 import { runPipeline } from "./pipeline.js";
+import { runConfigWizard } from "./wizard.js";
 
 interface CliOptions {
-  config: string;
+  config?: string;
   input?: string;
   output?: string;
   skipIfExists?: string;
+  wizard?: string | boolean;
   workers: number;
   dryRun: boolean;
   verbose: number;
@@ -26,11 +28,11 @@ function parseSkipFields(skipIfExists: string | undefined): string[] {
 }
 
 function buildCommand(): Command {
-  return new Command()
+  const cli = new Command()
     .name("osmia-ai")
     .description("AI-powered data enrichment CLI tool")
-    .version("0.1.0")
-    .requiredOption("-c, --config <path>", "Path to YAML configuration file")
+    .version("0.2.0")
+    .option("-c, --config <path>", "Path to YAML configuration file")
     .option(
       "-i, --input <path>",
       "Path to input JSON/JSONL file (optional, reads stdin if not provided)"
@@ -57,19 +59,41 @@ function buildCommand(): Command {
     )
     .option("--dry-run", "Simulate processing without making LLM calls", false)
     .option(
+      "--wizard [path]",
+      "Launch an interactive wizard and create a YAML config file"
+    )
+    .option(
       "-v, --verbose",
       "Increase verbosity (repeat for more detail)",
       (_value, previous: number) => previous + 1,
       0
     );
-}
 
-export async function run(argv: string[] = process.argv): Promise<void> {
-  const cli = buildCommand();
+  cli
+    .command("init")
+    .description("Create a config file with an interactive wizard")
+    .argument("[path]", "Where to write the generated YAML config")
+    .action(async (path?: string) => {
+      await runConfigWizard(path ? { outputPath: path } : {});
+    });
 
-  try {
-    cli.parse(argv);
+  cli.action(async () => {
     const options = cli.opts<CliOptions>();
+
+    if (options.wizard !== undefined) {
+      await runConfigWizard(
+        typeof options.wizard === "string"
+          ? { outputPath: options.wizard }
+          : {}
+      );
+      return;
+    }
+
+    if (!options.config) {
+      throw new Error(
+        'Missing required option "--config <path>". Use "--wizard" or "init" to create one.'
+      );
+    }
 
     const pipelineOptions = {
       config: options.config,
@@ -82,6 +106,16 @@ export async function run(argv: string[] = process.argv): Promise<void> {
     };
 
     await runPipeline(pipelineOptions);
+  });
+
+  return cli;
+}
+
+export async function run(argv: string[] = process.argv): Promise<void> {
+  const cli = buildCommand();
+
+  try {
+    await cli.parseAsync(argv);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const exitCode =

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { z } from "zod";
 import * as YAML from "yaml";
 
-const supportedExtractionFieldTypes = [
+export const supportedExtractionFieldTypes = [
   "string",
   "number",
   "boolean",
@@ -190,4 +190,10 @@ export function loadConfig(path: string): Config {
   }
 
   return validateConfig(parsedData);
+}
+
+export function serializeConfig(config: Config): string {
+  return YAML.stringify(validateConfig(config), {
+    lineWidth: 0,
+  });
 }
