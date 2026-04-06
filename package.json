@@ -1,6 +1,6 @@
 {
   "name": "osmia-ai",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "AI-powered data enrichment CLI tool",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,7 +15,7 @@
     "dist"
   ],
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "build": "tsc",
@@ -54,7 +54,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/node": "^22.10.1",
+    "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^2.1.8",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

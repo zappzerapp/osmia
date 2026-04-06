@@ -23,6 +23,8 @@ cat input.json | npx osmia-ai --config config.yaml > enriched.json
 
 ## Installation
 
+Requires Node.js 24 LTS or newer.
+
 ```bash
 npm install -g osmia-ai
 # or use directly
@@ -129,6 +131,7 @@ the fastest way to generate a valid starting point.
 ## Development
 
 ```bash
+nvm use
 npm install
 npm run build
 npm test
