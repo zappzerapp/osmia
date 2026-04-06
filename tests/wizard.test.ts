@@ -85,6 +85,7 @@ describe("runConfigWizard", () => {
     const result = await runConfigWizard({
       outputPath: configPath,
       stdout,
+      allowNonTTY: true,
     });
 
     expect(result.path).toBe(configPath);
@@ -143,7 +144,56 @@ describe("runConfigWizard", () => {
       runConfigWizard({
         outputPath: configPath,
         stdout,
+        allowNonTTY: true,
       })
     ).rejects.toThrow("Wizard aborted because the target file already exists.");
+  });
+
+  it("rejects non-interactive wizard usage by default", async () => {
+    await expect(
+      runConfigWizard({
+        outputPath: "config.yaml",
+        stdout: new PassThrough(),
+      })
+    ).rejects.toThrow("The config wizard requires an interactive terminal.");
+  });
+
+  it("accepts schema field names beyond identifier-style keys", async () => {
+    const tempDir = createTempDir();
+    const configPath = join(tempDir, "generated.yaml");
+
+    mockState.answers.push(
+      "",
+      "kimi-k2.5",
+      "https://ollama.com/api/chat",
+      "60000",
+      "3",
+      "30",
+      "1",
+      "OLLAMA_API_KEY",
+      "Product {name}",
+      "5",
+      "de-de",
+      "10000",
+      "3",
+      "30",
+      "1",
+      "y",
+      "short-description",
+      "string",
+      "Short description",
+      ""
+    );
+
+    const result = await runConfigWizard({
+      outputPath: configPath,
+      stdout: new PassThrough(),
+      allowNonTTY: true,
+    });
+
+    expect(result.config.extraction.schema["short-description"]).toEqual({
+      type: "string",
+      description: "Short description",
+    });
   });
 });

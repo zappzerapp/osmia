@@ -25,6 +25,7 @@ export interface ConfigWizardOptions {
   stdin?: Readable;
   stdout?: Writable;
   cwd?: string;
+  allowNonTTY?: boolean;
 }
 
 export interface ConfigWizardResult {
@@ -36,6 +37,10 @@ export interface ConfigWizardResult {
 interface PromptContext {
   stdin: Readable;
   stdout: Writable;
+}
+
+interface TTYLikeStream {
+  isTTY?: boolean;
 }
 
 function createDefaultConfig(): Config {
@@ -65,6 +70,10 @@ function createDefaultConfig(): Config {
           type: "string",
           description: "Short factual summary",
         },
+        category: {
+          type: "string",
+          description: "Most likely category",
+        },
       },
     },
   });
@@ -72,6 +81,23 @@ function createDefaultConfig(): Config {
 
 function writeLine(output: Writable, message = ""): void {
   output.write(`${message}\n`);
+}
+
+function isInteractiveStream(stream: TTYLikeStream | undefined): boolean {
+  return stream?.isTTY === true;
+}
+
+function assertInteractiveTerminal(stdin: Readable, stdout: Writable): void {
+  if (
+    isInteractiveStream(stdin as Readable & TTYLikeStream) &&
+    isInteractiveStream(stdout as Writable & TTYLikeStream)
+  ) {
+    return;
+  }
+
+  throw new Error(
+    'The config wizard requires an interactive terminal. Run "osmia-ai init" directly in a TTY or pass "--config <path>" for non-interactive usage.'
+  );
 }
 
 function formatPrompt(label: string, defaultValue?: string | number): string {
@@ -259,10 +285,6 @@ async function promptSchema(
         validate: (value) => {
           if (value.length === 0) {
             return undefined;
-          }
-
-          if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
-            return "Field names must start with a letter or underscore and contain only letters, numbers, or underscores.";
           }
 
           if (schema[value]) {
@@ -482,9 +504,15 @@ async function collectWizardAnswers({
 export async function runConfigWizard(
   options: ConfigWizardOptions = {}
 ): Promise<ConfigWizardResult> {
+  const stdin = options.stdin ?? defaultStdin;
   const stdout = options.stdout ?? defaultStdout;
+
+  if (!options.allowNonTTY) {
+    assertInteractiveTerminal(stdin, stdout);
+  }
+
   const result = await collectWizardAnswers({
-    stdin: options.stdin ?? defaultStdin,
+    stdin,
     stdout,
     cwd: options.cwd ?? process.cwd(),
     ...(options.outputPath ? { outputPath: options.outputPath } : {}),

@@ -4,7 +4,8 @@ A stateless, AI-powered CLI tool for data enrichment. **Unix philosophy: File-In
 
 ## Overview
 
-Osmia takes raw JSON/JSONL data, enriches it via web search + LLM, and outputs enhanced data without introducing a database or backend.
+Osmia takes raw JSON/JSONL data, enriches it via web search + LLM, and outputs enhanced data without introducing a
+database or backend.
 
 ```bash
 cat input.json | npx osmia-ai --config config.yaml > enriched.json
@@ -34,11 +35,13 @@ npx osmia-ai --config config.yaml --input data.json --output enriched.json
    ```bash
    osmia-ai init
    ```
-   The new wizard asks for your LLM settings, search template, extraction prompt, and schema fields, then writes a valid YAML config for you.
+   The new wizard asks for your LLM settings, search template, extraction prompt, and schema fields, then writes a valid
+   YAML config for you.
+   Run it in an interactive terminal, not via a pipe or CI stdin.
 
 2. **Set API key**:
    ```bash
-  export OLLAMA_API_KEY="your-ollama-cloud-api-key"
+   export OLLAMA_API_KEY="your-ollama-cloud-api-key"
    ```
 
 3. **Run**:
@@ -110,36 +113,11 @@ osmia-ai --config config.yaml --input data.json --dry-run -vv
 
 ## Configuration
 
-```yaml
-llm:
-  model: "kimi-k2.5"
-  apiUrl: "https://ollama.com/api/chat"
-  maxRetries: 3
-  requestsPerMinute: 30
-  maxConcurrency: 1
-
-research:
-  searchQuery: "Product {name} {sku} specifications overview"
-  maxResults: 5
-  region: "de-de"
-  timeoutMs: 10000
-  maxRetries: 3
-  requestsPerMinute: 30
-  maxConcurrency: 1
-
-extraction:
-  prompt: |
-    Extract category, short description, and notable specifications from web results.
-    Respond ONLY in JSON format.
-  schema:
-    category: string
-    description: string
-    specs: string
-```
-
 **Templating**: Use `{fieldName}` placeholders in `searchQuery`—they're replaced from input records.
 
-The repository also includes a current template at [config.yaml.template](config.yaml.template), but `osmia-ai init` is the fastest way to generate a valid config for a new project.
+Use [config.yaml.template](config.yaml.template) for the canonical default structure,
+and [examples/catalog-config.yaml](examples/catalog-config.yaml) as a richer catalog-focused example. `osmia-ai init` is
+the fastest way to generate a valid starting point.
 
 ## Use Cases
 
@@ -160,7 +138,8 @@ Both `camelCase` and legacy `snake_case` config keys are accepted when loading Y
 
 Runs abort before writing output if any record fails, so batch jobs do not silently leave behind partial result files.
 
-For large batches, start conservatively with `--workers 2` or `--workers 3` and increase `requestsPerMinute` only after confirming that both your search provider and LLM endpoint accept the traffic without returning `429` responses.
+For large batches, start conservatively with `--workers 2` or `--workers 3` and increase `requestsPerMinute` only after
+confirming that both your search provider and LLM endpoint accept the traffic without returning `429` responses.
 
 ## License
 

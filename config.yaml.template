@@ -20,7 +20,7 @@ research:
   maxConcurrency: 1
 
 extraction:
-  prompt: |
+  prompt: |-
     You enrich records using public web information.
     Use the search results to extract only facts that are supported by the sources.
     If a value cannot be determined confidently, return null or an empty value that still matches the schema.

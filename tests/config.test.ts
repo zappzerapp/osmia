@@ -1,8 +1,9 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadConfig, serializeConfig, validateConfig } from "../src/config.js";
+import { createDefaultConfig } from "../src/wizard.js";
 
 const tempDirs: string[] = [];
 
@@ -163,5 +164,19 @@ extraction:
     writeFileSync(configPath, yaml, "utf-8");
 
     expect(loadConfig(configPath)).toEqual(originalConfig);
+  });
+
+  it("keeps the checked-in config template aligned with the wizard defaults", () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "osmia-config-template-"));
+    tempDirs.push(tempDir);
+    const configPath = join(tempDir, "config.yaml");
+
+    writeFileSync(
+      configPath,
+      readFileSync(resolve(process.cwd(), "config.yaml.template"), "utf-8"),
+      "utf-8"
+    );
+
+    expect(loadConfig(configPath)).toEqual(createDefaultConfig());
   });
 });
