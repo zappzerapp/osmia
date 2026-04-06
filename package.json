@@ -39,11 +39,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zappzerapp/osmia.git"
+    "url": "git+https://github.com/zappzerapp/osmia-ai.git"
   },
-  "homepage": "https://github.com/zappzerapp/osmia",
+  "homepage": "https://github.com/zappzerapp/osmia-ai",
   "bugs": {
-    "url": "https://github.com/zappzerapp/osmia/issues"
+    "url": "https://github.com/zappzerapp/osmia-ai/issues"
   },
   "dependencies": {
     "commander": "^12.1.0",
