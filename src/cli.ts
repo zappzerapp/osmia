@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import { realpathSync } from "node:fs";
 import { stderr } from "node:process";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runPipeline } from "./pipeline.js";
 import { runConfigWizard } from "./wizard.js";
 
@@ -111,6 +114,24 @@ function buildCommand(): Command {
   return cli;
 }
 
+export function isCliEntryPoint(
+  metaUrl: string,
+  argv: string[] = process.argv
+): boolean {
+  const entryPath = argv[1];
+  if (!entryPath) {
+    return false;
+  }
+
+  try {
+    return (
+      realpathSync(fileURLToPath(metaUrl)) === realpathSync(resolve(entryPath))
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function run(argv: string[] = process.argv): Promise<void> {
   const cli = buildCommand();
 
@@ -128,6 +149,6 @@ export async function run(argv: string[] = process.argv): Promise<void> {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntryPoint(import.meta.url)) {
   void run();
 }
