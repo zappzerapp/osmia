@@ -1,0 +1,14 @@
+[
+  {
+    "id": "sku-1001",
+    "brand": "Acme",
+    "name": "Acme Studio Headphones",
+    "sku": "AH-1001"
+  },
+  {
+    "id": "sku-2002",
+    "brand": "Northwind",
+    "name": "Northwind Travel Mug",
+    "sku": "NT-2002"
+  }
+]

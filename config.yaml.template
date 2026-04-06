@@ -1,0 +1,90 @@
+# Osmia Configuration Template
+# Copy this file to config.yaml and customize for your use case
+
+# LLM Provider Configuration
+llm:
+  model: "kimi-k2.5"
+  api_url: "https://ollama.com/api/chat"
+  # api_key is read from environment variable: OSMIA_API_KEY
+  
+  # Optional: API timeout in seconds
+  timeout: 60
+  
+  # Optional: Max retries for failed requests
+  max_retries: 3
+
+# Web Research Configuration
+research:
+  # Search query template with placeholders
+  # Placeholders like {fieldname} are replaced from input data
+  search_query: "{name} {id} details information"
+  
+  # Maximum search results to fetch per item
+  max_results: 5
+  
+  # Search region (e.g., 'de-de', 'en-us', 'fr-fr')
+  region: "en-us"
+  
+  # Optional: Safe search ('strict', 'moderate', 'off')
+  safe_search: "moderate"
+
+# Data Extraction Configuration
+extraction:
+  # System prompt for the LLM
+  # Use this to define the AI's role and general instructions
+  system_prompt: >
+    You are a data extraction specialist. Your task is to extract specific
+    information from web search results and format it according to the schema.
+    Be concise and factual. Avoid generic phrases.
+  
+  # User prompt template with placeholders
+  # {context} is automatically replaced with search results
+  # Other placeholders like {name}, {id} come from input data
+  user_prompt: >
+    Based on the following web search results, extract the requested information.
+    
+    Search results:
+    {context}
+    
+    Extract the data in strict JSON format according to the schema.
+  
+  # Output schema definition
+  # Each field should have a name, type, and description
+  schema:
+    field_name:
+      type: "string"
+      description: "Description of this field"
+    another_field:
+      type: "integer"
+      description: "Another field description"
+  
+  # Optional: Additional validation rules
+  validation:
+    # Require certain fields
+    required: ["field_name"]
+    
+    # Optional fields (will be null if not found)
+    optional: ["another_field"]
+
+# Processing Configuration
+processing:
+  # Skip items where these fields already exist in input
+  # Set to empty list [] to process all items
+  skip_if_exists: ["field_name", "another_field"]
+  
+  # Batch size for processing (if supported by API)
+  batch_size: 1
+  
+  # Delay between requests in seconds (rate limiting)
+  delay: 1.0
+
+# Output Configuration
+output:
+  # Format: 'json' or 'csv'
+  format: "json"
+  
+  # Pretty print JSON output
+  pretty: true
+  
+  # Include original input fields in output
+  include_input: true

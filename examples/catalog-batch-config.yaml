@@ -1,0 +1,37 @@
+llm:
+  model: "kimi-k2.5"
+  apiUrl: "https://ollama.com/api/chat"
+  timeout: 120000
+  maxRetries: 5
+  requestsPerMinute: 10
+  maxConcurrency: 1
+
+research:
+  searchQuery: "Product {name} {sku} specifications overview"
+  maxResults: 5
+  region: "de-de"
+  timeoutMs: 15000
+  maxRetries: 4
+  requestsPerMinute: 10
+  maxConcurrency: 1
+
+extraction:
+  prompt: |
+    You enrich product catalog records from public web information.
+    Use the search results to identify the most likely category, a short factual description,
+    and a concise summary of notable specifications or features.
+    Prefer conservative, verifiable wording over marketing language.
+    If the search results are inconclusive, leave uncertain details out.
+
+    Respond ONLY as a JSON object.
+
+  schema:
+    category:
+      type: "string"
+      description: "Most likely product category"
+    description:
+      type: "string"
+      description: "Short factual summary in one or two sentences"
+    specs:
+      type: "string"
+      description: "Concise list of notable specifications or features"
