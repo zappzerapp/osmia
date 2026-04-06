@@ -23,6 +23,7 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
           cache: npm
+          always-auth: true
 
       - name: Install dependencies
         run: npm install
@@ -52,6 +53,18 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Verify npm authentication
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "NPM_TOKEN is not configured for this repository."
+            echo "Add it in GitHub repository settings under Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish to npm
         run: npm publish --provenance
