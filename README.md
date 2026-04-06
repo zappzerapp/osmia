@@ -1,4 +1,4 @@
-# 🐝 Osmia
+# 🐝 Osmia AI
 
 A stateless, AI-powered CLI tool for data enrichment. **Unix philosophy: File-In ➔ File-Out**.
 
