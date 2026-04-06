@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { realpathSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { stderr } from "node:process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,11 +30,22 @@ function parseSkipFields(skipIfExists: string | undefined): string[] {
     .filter(Boolean);
 }
 
+function getCliVersion(): string {
+  const packageJsonPath = fileURLToPath(new URL("../package.json", import.meta.url));
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as {
+    version?: unknown;
+  };
+
+  return typeof packageJson.version === "string"
+    ? packageJson.version
+    : "0.0.0";
+}
+
 function buildCommand(): Command {
   const cli = new Command()
     .name("osmia-ai")
     .description("AI-powered data enrichment CLI tool")
-    .version("0.2.0")
+    .version(getCliVersion())
     .option("-c, --config <path>", "Path to YAML configuration file")
     .option(
       "-i, --input <path>",
