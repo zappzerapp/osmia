@@ -37,6 +37,14 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zappzerapp/osmia.git"
+  },
+  "homepage": "https://github.com/zappzerapp/osmia",
+  "bugs": {
+    "url": "https://github.com/zappzerapp/osmia/issues"
+  },
   "dependencies": {
     "commander": "^12.1.0",
     "@phukon/duckduckgo-search": "^1.1.0",
