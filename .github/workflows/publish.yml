@@ -27,6 +27,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Ensure Rollup native binary is present
+        if: runner.os == 'Linux' && runner.arch == 'X64'
+        run: |
+          ROLLUP_VERSION="$(node -p "require('./node_modules/rollup/package.json').version")"
+          npm install --no-save "@rollup/rollup-linux-x64-gnu@${ROLLUP_VERSION}"
+
       - name: Verify tag matches package version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
