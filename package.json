@@ -1,12 +1,12 @@
 {
-  "name": "osmia",
+  "name": "osmia-ai",
   "version": "0.1.0",
   "description": "AI-powered data enrichment CLI tool",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "osmia": "dist/cli.js"
+    "osmia-ai": "dist/cli.js"
   },
   "exports": {
     ".": "./dist/index.js"

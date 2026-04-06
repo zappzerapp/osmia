@@ -7,7 +7,7 @@ A stateless, AI-powered CLI tool for data enrichment. **Unix philosophy: File-In
 Osmia takes raw JSON/JSONL data, enriches it via web search + LLM, and outputs enhanced data without introducing a database or backend.
 
 ```bash
-cat input.json | npx osmia --config config.yaml > enriched.json
+cat input.json | npx osmia-ai --config config.yaml > enriched.json
 ```
 
 ## Features
@@ -23,9 +23,9 @@ cat input.json | npx osmia --config config.yaml > enriched.json
 ## Installation
 
 ```bash
-npm install -g osmia
+npm install -g osmia-ai
 # or use directly
-npx osmia --config config.yaml --input data.json --output enriched.json
+npx osmia-ai --config config.yaml --input data.json --output enriched.json
 ```
 
 ## Quick Start
@@ -39,13 +39,13 @@ npx osmia --config config.yaml --input data.json --output enriched.json
 
 3. **Run**:
    ```bash
-   osmia --config config.yaml --input data.json --output enriched.json
+   osmia-ai --config config.yaml --input data.json --output enriched.json
    ```
 
 ## Usage
 
 ```
-Usage: osmia [options]
+Usage: osmia-ai [options]
 
 Options:
   -c, --config <path>            YAML configuration file (required)
@@ -62,31 +62,31 @@ Options:
 ### Basic Usage
 
 ```bash
-osmia --config config.yaml --input data.json --output enriched.json
+osmia-ai --config config.yaml --input data.json --output enriched.json
 ```
 
 ### Unix Pipe
 
 ```bash
-cat data.json | osmia --config config.yaml > enriched.json
+cat data.json | osmia-ai --config config.yaml > enriched.json
 ```
 
 ### With Skip Logic
 
 ```bash
-osmia -c config.yaml -i data.json -o enriched.json -s category,description,specs
+osmia-ai -c config.yaml -i data.json -o enriched.json -s category,description,specs
 ```
 
 ### Concurrent Processing
 
 ```bash
-osmia --config config.yaml --input data.json --workers 5 --verbose
+osmia-ai --config config.yaml --input data.json --workers 5 --verbose
 ```
 
 ### Dry Run (Debug Prompts)
 
 ```bash
-osmia --config config.yaml --input data.json --dry-run -vv
+osmia-ai --config config.yaml --input data.json --dry-run -vv
 ```
 
 ## Configuration

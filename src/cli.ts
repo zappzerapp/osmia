@@ -27,7 +27,7 @@ function parseSkipFields(skipIfExists: string | undefined): string[] {
 
 function buildCommand(): Command {
   return new Command()
-    .name("osmia")
+    .name("osmia-ai")
     .description("AI-powered data enrichment CLI tool")
     .version("0.1.0")
     .requiredOption("-c, --config <path>", "Path to YAML configuration file")
