@@ -10,6 +10,7 @@ afterEach(() => {
 
 describe("LLMClient", () => {
   it("retries retryable 429 responses and then succeeds", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(
@@ -51,9 +52,11 @@ describe("LLMClient", () => {
       client.extract("Extract fields", "Input record")
     ).resolves.toEqual({ beschreibung: "Kurzbeschreibung" });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
   });
 
   it("retries malformed JSON content and then succeeds", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(
@@ -101,6 +104,7 @@ describe("LLMClient", () => {
       client.extract("Extract fields", "Input record")
     ).resolves.toEqual({ beschreibung: "Kurzbeschreibung" });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
   });
 
   it("does not retry non-retryable semantic parsing failures", async () => {

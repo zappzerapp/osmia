@@ -28,6 +28,15 @@ function createTempDir(): string {
   return tempDir;
 }
 
+function silenceStderr(): () => void {
+  const originalWrite = process.stderr.write;
+  process.stderr.write = ((..._args: Parameters<typeof process.stderr.write>) => true) as typeof process.stderr.write;
+
+  return () => {
+    process.stderr.write = originalWrite;
+  };
+}
+
 describe("pipeline helpers", () => {
   it("skips only when every requested field has a meaningful value", () => {
     expect(
@@ -136,13 +145,15 @@ extraction:
   });
 
   it("rejects extracted data that violates the configured schema without writing output", async () => {
-    const tempDir = createTempDir();
-    const configPath = join(tempDir, "config.yaml");
-    const chunks: string[] = [];
+    const restoreStderr = silenceStderr();
+    try {
+      const tempDir = createTempDir();
+      const configPath = join(tempDir, "config.yaml");
+      const chunks: string[] = [];
 
-    writeFileSync(
-      configPath,
-      `
+      writeFileSync(
+        configPath,
+        `
 llm:
   model: kimi-k2.5
   apiUrl: https://ollama.com/api/chat
@@ -156,44 +167,49 @@ extraction:
     beschreibung:
       type: string
 `,
-      "utf-8"
-    );
+        "utf-8"
+      );
 
-    const stdout = new Writable({
-      write(chunk, _encoding, callback) {
-        chunks.push(chunk.toString());
-        callback();
-      },
-    });
-
-    await expect(
-      runPipeline({
-        config: configPath,
-        skipFields: [],
-        workers: 1,
-        dryRun: false,
-        verbose: 0,
-        stdin: Readable.from(['{"id":"1","titel":"Eins"}\n']),
-        stdout,
-        searchFn: async () => [],
-        llmClient: {
-          extract: async () => ({ beschreibung: 123 }),
+      const stdout = new Writable({
+        write(chunk, _encoding, callback) {
+          chunks.push(chunk.toString());
+          callback();
         },
-      })
-    ).rejects.toThrow("1 record(s) failed to process");
+      });
 
-    expect(chunks).toEqual([]);
+      await expect(
+        runPipeline({
+          config: configPath,
+          skipFields: [],
+          workers: 1,
+          dryRun: false,
+          verbose: 0,
+          stdin: Readable.from(['{"id":"1","titel":"Eins"}\n']),
+          stdout,
+          searchFn: async () => [],
+          llmClient: {
+            extract: async () => ({ beschreibung: 123 }),
+          },
+        })
+      ).rejects.toThrow("1 record(s) failed to process");
+
+      expect(chunks).toEqual([]);
+    } finally {
+      restoreStderr();
+    }
   });
 
   it("does not create the output file when any record fails", async () => {
-    const tempDir = createTempDir();
-    const configPath = join(tempDir, "config.yaml");
-    const outputPath = join(tempDir, "output.jsonl");
-    let callCount = 0;
+    const restoreStderr = silenceStderr();
+    try {
+      const tempDir = createTempDir();
+      const configPath = join(tempDir, "config.yaml");
+      const outputPath = join(tempDir, "output.jsonl");
+      let callCount = 0;
 
-    writeFileSync(
-      configPath,
-      `
+      writeFileSync(
+        configPath,
+        `
 llm:
   model: kimi-k2.5
   apiUrl: https://ollama.com/api/chat
@@ -207,30 +223,33 @@ extraction:
     beschreibung:
       type: string
 `,
-      "utf-8"
-    );
+        "utf-8"
+      );
 
-    await expect(
-      runPipeline({
-        config: configPath,
-        outputPath,
-        skipFields: [],
-        workers: 1,
-        dryRun: false,
-        verbose: 0,
-        stdin: Readable.from(['{"id":"1","titel":"Eins"}\n{"id":"2","titel":"Zwei"}\n']),
-        searchFn: async () => [],
-        llmClient: {
-          extract: async () => {
-            callCount += 1;
-            return callCount === 1
-              ? { beschreibung: "Kurzbeschreibung" }
-              : { beschreibung: 123 };
+      await expect(
+        runPipeline({
+          config: configPath,
+          outputPath,
+          skipFields: [],
+          workers: 1,
+          dryRun: false,
+          verbose: 0,
+          stdin: Readable.from(['{"id":"1","titel":"Eins"}\n{"id":"2","titel":"Zwei"}\n']),
+          searchFn: async () => [],
+          llmClient: {
+            extract: async () => {
+              callCount += 1;
+              return callCount === 1
+                ? { beschreibung: "Kurzbeschreibung" }
+                : { beschreibung: 123 };
+            },
           },
-        },
-      })
-    ).rejects.toThrow("1 record(s) failed to process");
+        })
+      ).rejects.toThrow("1 record(s) failed to process");
 
-    expect(existsSync(outputPath)).toBe(false);
+      expect(existsSync(outputPath)).toBe(false);
+    } finally {
+      restoreStderr();
+    }
   });
 });
