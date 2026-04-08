@@ -46,8 +46,9 @@
     "url": "https://github.com/zappzerapp/osmia-ai/issues"
   },
   "dependencies": {
-    "commander": "^12.1.0",
     "@phukon/duckduckgo-search": "^1.1.0",
+    "commander": "^12.1.0",
+    "exa-js": "^1.0.12",
     "p-queue": "^8.0.1",
     "picocolors": "^1.1.1",
     "yaml": "^2.6.1",

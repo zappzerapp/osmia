@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from "node:timers/promises";
-import { DDGS } from "@phukon/duckduckgo-search";
+import type { SearchProvider } from "./config.js";
 
 export interface SearchResult {
   title: string;
@@ -7,13 +7,8 @@ export interface SearchResult {
   snippet: string;
 }
 
-interface DuckDuckGoSearchResult {
-  title?: string;
-  href?: string;
-  body?: string;
-}
-
 export interface SearchOptions {
+  provider?: SearchProvider;
   maxResults?: number;
   region?: string;
   timeoutMs?: number;
@@ -33,12 +28,13 @@ export class SearchError extends Error {
   }
 }
 
-const DEFAULT_OPTIONS: Required<Pick<SearchOptions, "maxResults" | "timeoutMs" | "maxRetries">> =
-  {
-    maxResults: 5,
-    timeoutMs: 10000,
-    maxRetries: 3,
-  };
+const DEFAULT_OPTIONS: Required<Omit<SearchOptions, "provider">> & { provider: SearchProvider } = {
+  provider: "exa",
+  maxResults: 5,
+  region: "de-de",
+  timeoutMs: 10000,
+  maxRetries: 3,
+};
 
 function inferSearchStatusCode(message: string): number | undefined {
   const statusMatch = message.match(/\b(4\d{2}|5\d{2})\b/);
@@ -108,11 +104,201 @@ export function formatSearchResults(results: SearchResult[]): string {
     .join("\n\n");
 }
 
+interface SearchProviderImpl {
+  search(query: string, options: Required<Omit<SearchOptions, "provider">>): Promise<SearchResult[]>;
+}
+
+function getExaApiKey(): string {
+  const apiKey = process.env.EXA_API_KEY;
+  if (!apiKey) {
+    throw new SearchError(
+      "EXA_API_KEY environment variable is required for Exa provider. Get your API key at https://exa.ai",
+      undefined,
+      undefined,
+      undefined,
+      false
+    );
+  }
+  return apiKey;
+}
+
+function getGoogleApiKey(): string {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
+    throw new SearchError(
+      "GOOGLE_API_KEY environment variable is required for Google provider. Get your API key at https://developers.google.com/custom-search/v1/introduction",
+      undefined,
+      undefined,
+      undefined,
+      false
+    );
+  }
+  return apiKey;
+}
+
+function getGoogleSearchEngineId(): string {
+  const cx = process.env.GOOGLE_SEARCH_ENGINE_ID;
+  if (!cx) {
+    throw new SearchError(
+      "GOOGLE_SEARCH_ENGINE_ID environment variable is required for Google provider. Create a Custom Search Engine at https://cse.google.com",
+      undefined,
+      undefined,
+      undefined,
+      false
+    );
+  }
+  return cx;
+}
+
+const exaProvider: SearchProviderImpl = {
+  async search(query: string, options: Required<Omit<SearchOptions, "provider">>): Promise<SearchResult[]> {
+    const apiKey = getExaApiKey();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Exa = require("exa-js").default;
+    const exa = new Exa(apiKey);
+
+    const searchPromise = exa.searchAndContents(query, {
+      numResults: options.maxResults,
+      text: true,
+      useAutoprompt: true,
+    });
+
+    interface ExaResult {
+      title: string | null;
+      url: string;
+      text?: string;
+    }
+
+    interface ExaSearchResponse {
+      results: ExaResult[];
+    }
+
+    const results = (await Promise.race([
+      searchPromise,
+      createTimeout(options.timeoutMs),
+    ])) as ExaSearchResponse;
+
+    return results.results.map((result: ExaResult) => ({
+      title: result.title ?? "Untitled",
+      url: result.url,
+      snippet: result.text ?? "",
+    }));
+  },
+};
+
+const duckduckgoProvider: SearchProviderImpl = {
+  async search(query: string, options: Required<Omit<SearchOptions, "provider">>): Promise<SearchResult[]> {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DDGS } = require("@phukon/duckduckgo-search");
+
+    const ddgs = new DDGS({ timeout: options.timeoutMs });
+
+    interface DuckDuckGoResult {
+      title?: string;
+      href?: string;
+      body?: string;
+    }
+
+    const results = await ddgs.text({
+      keywords: query,
+      maxResults: options.maxResults,
+      region: options.region,
+    });
+
+    return (results as DuckDuckGoResult[]).map((result) => ({
+      title: result.title ?? "Untitled",
+      url: result.href ?? "",
+      snippet: result.body ?? "",
+    }));
+  },
+};
+
+const googleProvider: SearchProviderImpl = {
+  async search(query: string, options: Required<Omit<SearchOptions, "provider">>): Promise<SearchResult[]> {
+    const apiKey = getGoogleApiKey();
+    const cx = getGoogleSearchEngineId();
+
+    const params = new URLSearchParams({
+      key: apiKey,
+      cx: cx,
+      q: query,
+      num: String(options.maxResults),
+    });
+
+    const searchPromise = fetch(`https://www.googleapis.com/customsearch/v1?${params}`);
+
+    interface GoogleResult {
+      title?: string;
+      link?: string;
+      snippet?: string;
+    }
+
+    interface GoogleSearchResponse {
+      items?: GoogleResult[];
+      error?: { code: number; message: string };
+    }
+
+    const response = await Promise.race([
+      searchPromise,
+      createTimeout(options.timeoutMs),
+    ]);
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new SearchError(
+        `Google Search API error: ${response.status} ${text}`,
+        undefined,
+        response.status,
+        undefined,
+        isRetryableSearchStatus(response.status)
+      );
+    }
+
+    const data = (await response.json()) as GoogleSearchResponse;
+
+    if (data.error) {
+      throw new SearchError(
+        `Google Search API error: ${data.error.message}`,
+        data.error,
+        data.error.code,
+        undefined,
+        false
+      );
+    }
+
+    return (data.items ?? []).map((item) => ({
+      title: item.title ?? "Untitled",
+      url: item.link ?? "",
+      snippet: item.snippet ?? "",
+    }));
+  },
+};
+
+const providers: Record<SearchProvider, SearchProviderImpl> = {
+  exa: exaProvider,
+  duckduckgo: duckduckgoProvider,
+  google: googleProvider,
+};
+
+function getProvider(provider: SearchProvider): SearchProviderImpl {
+  const impl = providers[provider];
+  if (!impl) {
+    throw new SearchError(
+      `Unknown search provider: ${provider}. Supported providers: exa, duckduckgo, google`,
+      undefined,
+      undefined,
+      undefined,
+      false
+    );
+  }
+  return impl;
+}
+
 export async function searchWeb(
   query: string,
   options: SearchOptions = {}
 ): Promise<SearchResult[]> {
-  const { maxResults, region, timeoutMs, maxRetries } = {
+  const { provider, maxResults, region, timeoutMs, maxRetries } = {
     ...DEFAULT_OPTIONS,
     ...options,
   };
@@ -121,26 +307,16 @@ export async function searchWeb(
     throw new SearchError("Search query cannot be empty");
   }
 
-  const ddgs = new DDGS({ timeout: timeoutMs });
+  const providerImpl = getProvider(provider);
 
   for (let attemptNumber = 1; attemptNumber <= maxRetries + 1; attemptNumber += 1) {
     try {
-      const searchPromise = ddgs.text({
-        keywords: query,
+      return await providerImpl.search(query, {
         maxResults,
-        ...(region ? { region } : {}),
+        region,
+        timeoutMs,
+        maxRetries,
       });
-
-      const results = await Promise.race<DuckDuckGoSearchResult[]>([
-        searchPromise,
-        createTimeout(timeoutMs),
-      ]);
-
-      return results.map((result) => ({
-        title: result.title ?? "Untitled",
-        url: result.href ?? "",
-        snippet: result.body ?? "",
-      }));
     } catch (error) {
       const searchError =
         error instanceof SearchError

@@ -62,10 +62,14 @@ const llmConfigInputSchema = z
     apiKeyEnv: data.api_key_env ?? data.apiKeyEnv,
   }));
 
+export const searchProviders = ["exa", "duckduckgo", "google"] as const;
+export type SearchProvider = (typeof searchProviders)[number];
+
 const researchConfigInputSchema = z
   .object({
     searchQuery: z.string().min(1, "Search query is required").optional(),
     search_query: z.string().min(1, "Search query is required").optional(),
+    provider: z.enum(searchProviders).default("exa"),
     maxResults: z.number().int().positive().default(5),
     max_results: z.number().int().positive().optional(),
     region: z.string().default("de-de"),
@@ -89,6 +93,7 @@ const researchConfigInputSchema = z
   })
   .transform((data) => ({
     searchQuery: data.searchQuery ?? data.search_query!,
+    provider: data.provider,
     maxResults: data.max_results ?? data.maxResults,
     region: data.region,
     timeoutMs: data.timeout_ms ?? data.timeoutMs,
@@ -122,6 +127,7 @@ export const llmConfigSchema = llmConfigInputSchema.pipe(
 export const researchConfigSchema = researchConfigInputSchema.pipe(
   z.object({
     searchQuery: z.string().min(1),
+    provider: z.enum(searchProviders),
     maxResults: z.number().int().positive(),
     region: z.string(),
     timeoutMs: z.number().int().positive(),
