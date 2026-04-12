@@ -103,6 +103,7 @@ describe("runConfigWizard", () => {
       research: {
         searchQuery: "{title} company profile",
         maxResults: 7,
+        provider: "exa",
         region: "en-us",
         timeoutMs: 8000,
         maxRetries: 5,
